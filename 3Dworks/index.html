@@ -162,6 +162,8 @@
     @keyframes slotIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
 
     @media(max-width:480px){.strip-row{gap:4px}.columns-wrap{gap:5px}}
+
+
   </style>
 </head>
 <body>
@@ -250,110 +252,55 @@
 /* ════════ CONFIG ════════ */
 const NUM_COLS    = 5;
 const MAX_PER_COL = 5;
-const WHITE_SRC   = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 4'%3E%3Crect width='3' height='4' fill='white'/%3E%3C/svg%3E";
 
-/* ════════ ARCHIVE STATE ════════
-   Flat array, index 0 = newest.
-   Each entry: { thumb: lowQ dataURL, full: original dataURL }
-*/
+/* ════════ ARCHIVE STATE ════════ */
+// entries: [{ url, thumb }]  — HTML 수정으로 직접 채워짐
 let entries = [];
-
-/* ════════ THUMBNAIL MAKER ════════ */
-function makeThumbnail(file) {
-  return new Promise(res => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const W = 120, H = Math.round(W * img.naturalHeight / img.naturalWidth);
-      const c = document.createElement('canvas');
-      c.width = W; c.height = H;
-      c.getContext('2d').drawImage(img, 0, 0, W, H);
-      URL.revokeObjectURL(url);
-      res(c.toDataURL('image/jpeg', 0.35));
-    };
-    img.src = url;
-  });
-}
-
-function readFull(file) {
-  return new Promise(res => {
-    const r = new FileReader();
-    r.onload = e => res(e.target.result);
-    r.readAsDataURL(file);
-  });
-}
-
-/* ════════ PUSH IMAGE ════════ */
-async function pushEntry(file) {
-  const [thumb, full] = await Promise.all([makeThumbnail(file), readFull(file)]);
-  entries.unshift({ thumb, full }); // newest first
-  refreshBadge();
-}
 
 /* ════════ BADGE ════════ */
 function refreshBadge() {
   const n = entries.length;
-  document.getElementById('arcBadge').textContent  = n;
+  document.getElementById('arcBadge').textContent = n;
   document.getElementById('totalCnt').textContent  = n;
 }
 
-/* ════════ RENDER ARCHIVE COLUMNS ════════
-   Column 0 = newest column.
-   Within each column: slot 0 = newest item of that column.
-   Layout: entries[0]→col0/row0, entries[1]→col0/row1 … entries[4]→col0/row4,
-           entries[5]→col1/row0, …
-   So column index = floor(i / MAX_PER_COL), row = i % MAX_PER_COL
-*/
+/* ════════ RENDER ARCHIVE ════════ */
 function renderArchive() {
   const wrap = document.getElementById('colsWrap');
   wrap.innerHTML = '';
-
   for (let c = 0; c < NUM_COLS; c++) {
     const colEl = document.createElement('div');
     colEl.className = 'col';
-
     const lbl = document.createElement('div');
     lbl.className = 'col-label';
-    lbl.textContent = `${String(c + 1).padStart(2,'0')}`;
+    lbl.textContent = String(c + 1).padStart(2,'0');
     colEl.appendChild(lbl);
-
     for (let r = 0; r < MAX_PER_COL; r++) {
       const idx   = c * MAX_PER_COL + r;
       const entry = entries[idx];
       const slot  = document.createElement('div');
-
       if (entry) {
         slot.className = 'arc-slot';
-        slot.style.animation = `slotIn .38s ${(c * MAX_PER_COL + r) * 0.03}s cubic-bezier(.16,1,.3,1) both`;
-
+        slot.style.animation = `slotIn .38s ${idx * 0.025}s cubic-bezier(.16,1,.3,1) both`;
         const img = document.createElement('img');
-        img.className = 'arc-thumb';
-        img.src       = entry.thumb;   // low-q
-        img.loading   = 'lazy';
+        img.className = 'arc-thumb'; img.src = entry.thumb || entry.url; img.loading = 'lazy';
         slot.appendChild(img);
-
         if (idx === 0) {
           const b = document.createElement('span');
-          b.className   = 'new-badge';
-          b.textContent = 'NEW';
+          b.className = 'new-badge'; b.textContent = 'NEW';
           slot.appendChild(b);
         }
-
         const idxEl = document.createElement('span');
-        idxEl.className   = 'arc-idx';
+        idxEl.className = 'arc-idx';
         idxEl.textContent = `${String(c+1).padStart(2,'0')}-${String(r+1).padStart(2,'0')}`;
         slot.appendChild(idxEl);
-
-        // click → open full quality in lightbox
-        const fullSrc = entry.full;
-        slot.addEventListener('click', () => openLbSrc(fullSrc));
+        const u = entry.url;
+        slot.addEventListener('click', () => openLbSrc(u));
       } else {
         slot.className = 'arc-slot empty';
       }
-
       colEl.appendChild(slot);
     }
-
     wrap.appendChild(colEl);
   }
 }
@@ -363,15 +310,9 @@ function goArchive() {
   renderArchive();
   const p = document.getElementById('posterPage');
   const a = document.getElementById('archivePage');
-  p.classList.add('exit-up');
-  p.classList.remove('active');
-  setTimeout(() => {
-    p.classList.remove('exit-up');
-    a.classList.add('active');
-    a.scrollTop = 0;
-  }, 380);
+  p.classList.add('exit-up'); p.classList.remove('active');
+  setTimeout(() => { p.classList.remove('exit-up'); a.classList.add('active'); a.scrollTop = 0; }, 380);
 }
-
 function goBack() {
   const p = document.getElementById('posterPage');
   const a = document.getElementById('archivePage');
@@ -392,59 +333,18 @@ function closeLightbox() {
 document.getElementById('lbImg').addEventListener('click', e => e.stopPropagation());
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
-/* ════════ WIRE UP POSTER SLOTS ════════ */
-function isWhite(imgEl) {
-  return !imgEl || imgEl.src.includes('data:image/svg+xml');
-}
-
-function wireSlot(container, imgContainer) {
-  const input = document.createElement('input');
-  input.type = 'file'; input.accept = 'image/*';
-  input.style.display = 'none';
-  document.body.appendChild(input);
-
-  container.addEventListener('click', () => {
-    const img = imgContainer.querySelector('img');
-    if (isWhite(img)) {
-      input.click();
-    } else {
-      // show lightbox with original
-      // store full src on the img element as data attr
-      const fullSrc = img.dataset.full || img.src;
-      openLbSrc(fullSrc);
-    }
-  });
-
-  input.addEventListener('change', async () => {
-    const file = input.files[0];
-    if (!file) return;
-    input.value = '';
-
-    // show preview (object URL for display)
-    const previewUrl = URL.createObjectURL(file);
-    let img = imgContainer.querySelector('img');
-    if (!img) { img = document.createElement('img'); imgContainer.prepend(img); }
-
-    // store full quality as data attr for lightbox
-    const [thumb, full] = await Promise.all([makeThumbnail(file), readFull(file)]);
-    img.src = previewUrl;
-    img.dataset.full = full;
-
-    // archive
-    entries.unshift({ thumb, full });
-    refreshBadge();
-  });
-}
-
-// Thumb slots
+/* ════════ WIRE POSTER SLOTS — 클릭 = 라이트박스 ════════ */
 document.querySelectorAll('#stripRow .thumb').forEach(thumb => {
-  const inner = thumb.querySelector('.thumb-inner');
-  wireSlot(thumb, inner);
+  thumb.addEventListener('click', () => {
+    const img = thumb.querySelector('.thumb-inner img');
+    if (img && img.src) openLbSrc(img.src);
+  });
 });
 
-// Main slot
-const mainSlot = document.getElementById('mainSlot');
-wireSlot(mainSlot, mainSlot);
+document.getElementById('mainSlot').addEventListener('click', () => {
+  const img = document.querySelector('#mainSlot img');
+  if (img && img.src) openLbSrc(img.src);
+});
 
 /* ════════ INIT ════════ */
 renderArchive();

@@ -1,2 +1,2 @@
 # github.io
-https://wuet.github.io/
+https://wduet.github.io/

@@ -217,6 +217,7 @@
 
         .card-image-container {
             width: 100%;
+            aspect-ratio: 5 / 4;
             overflow: hidden;
             background: #0a0a0a;
         }
@@ -239,13 +240,16 @@
         .card-image {
           width: 100%;
           height: 100%;
-          object-fit: cover;   /* ← 핵심 */
+          object-fit: cover;
           display: block;
           transition: transform 0.4s ease;
         }
 
         .portfolio-card:hover .card-thumbnail {
             opacity: 0;
+        }
+        
+        .portfolio-card:hover .card-image {
             transform: scale(1.05);
         }
 

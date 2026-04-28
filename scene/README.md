@@ -1,1 +1,1 @@
-https://wduet.github.io/art/
+https://wduet.github.io/scene/

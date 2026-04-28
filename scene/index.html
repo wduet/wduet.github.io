@@ -14,17 +14,12 @@
       --text: #e8f0ff;
       --muted: rgba(232,240,255,0.38);
     }
-    html, body { width:100%; min-height:100%; background:#010814; color:var(--text); font-family:'DM Mono',monospace; overflow-x:hidden; }
+    html, body { width:100%; min-height:100%; background: #0a0a0a; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto; overflow-x:hidden; }
 
     /* ── BG ── */
     .bg {
       position:fixed; inset:0; z-index:0;
-      background:
-        radial-gradient(ellipse 90% 55% at 15% 8%, rgba(123,47,255,.38) 0%,transparent 58%),
-        radial-gradient(ellipse 60% 45% at 88% 18%, rgba(0,240,255,.22) 0%,transparent 52%),
-        radial-gradient(ellipse 75% 55% at 55% 95%, rgba(255,45,120,.22) 0%,transparent 58%),
-        radial-gradient(ellipse 50% 40% at 80% 70%, rgba(123,47,255,.15) 0%,transparent 50%),
-        linear-gradient(170deg,#010814 0%,#050d24 45%,#080820 100%);
+      background:#0a0a0a; color: #e0e0e0;
       animation:bgPulse 14s ease-in-out infinite alternate;
     }
     @keyframes bgPulse {
@@ -279,7 +274,7 @@
         <div class="ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=".9"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="8" cy="8" r="2"/><path d="M22 14l-6-6L4 22"/></svg><p>Main Image</p></div>
       </div>
     </div>
-
+    
     <div class="meta-bar">
       <div class="meta-left">
         <span class="meta-label">Portfolio</span>
